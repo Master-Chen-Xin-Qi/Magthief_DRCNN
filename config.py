@@ -8,7 +8,10 @@
 @Description  : Basic parameters for the project
 '''
 
-app_name = ["netmusic", "taobao", "wzry"]
-SLIDE_RATE = 0.15
-WINDOW_LEN = 300
-FS = 50
+CONFIG= {
+    "app_name" : ["netmusic", "taobao", "wzry"],
+    "SLIDE_RATE" : 0.15,
+    "WINDOW_LEN" : 300,
+    "FS" : 50,
+    "BATCH_SIZE" : 1,
+}
