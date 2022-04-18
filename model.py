@@ -14,13 +14,23 @@ import torch.nn as nn
 
 
 class DRCNN(nn.Module):
-    def __init__(self, input_size, num_cls) -> None:
+    def __init__(self, num_cls) -> None:
         super().__init__()
-        self.input_size = input_size
         self.num_cls = num_cls
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
-        self.relu1 = nn.ReLU()
+        self.conv_layer = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=1, stride=2, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+        )
         
         
     def forward(self, x):
+        '''
+            x: (batch_size, 1, 60, 60)
+        '''
+        feature = self.conv_layer(x)  # (batch_size, 64, 32, 32)
+        return feature
         

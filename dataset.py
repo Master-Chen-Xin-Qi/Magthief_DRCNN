@@ -29,7 +29,7 @@ class MyDataset(Dataset):
         label = self.labels[index]
         pic = Image.open(pic_file).convert('L')  # 转为灰度图
         pic = transforms.ToTensor()(pic)
-        pic = transforms.Resize([60, 60])(pic)
+        pic = transforms.Resize([60, 60])(pic)  # resize到60*60
         label = torch.tensor(label, dtype=torch.long)
         # unloader = transforms.ToPILImage()
         # image = pic.cpu().clone()

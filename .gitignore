@@ -1,3 +1,5 @@
 figs/
 mag_np/
 raw_mag_data/
+logs/
+save_checkpoints/
