@@ -156,7 +156,6 @@ def spectrum(data, app_name):
 
 
 
-
 # if __name__ == '__main__':
     # folder_name = './raw_mag_data'
     # save_path = './mag_np'
