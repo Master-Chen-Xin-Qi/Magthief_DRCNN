@@ -55,3 +55,14 @@ class STN(nn.Module):
         stn_out = self.stn(feature)
         out = self.classifier(stn_out.view(-1, 64 * 32 * 32))
         return F.log_softmax(out, dim=1)
+    
+    def generate_box(self, x):
+        '''
+        Output: The ground truth box for the RPN
+        '''
+        feature = self.conv_block(x)
+        stn_out = self.stn(feature)
+        return stn_out
+    
+    
+    
