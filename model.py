@@ -50,7 +50,7 @@ class RPN(nn.Module):
         self.din = din  # get the depth of input feature map
         self.anchor_sacles = CONFIG["anchor_scales"]
         self.anchor_ratios = CONFIG["anchor_ratios"]
-        self.feat_stride = CONFIG["feat_strides"]
+        self.feat_stride = 16
         
         # define the convrelu layers processing input features map
         self.RPN_Conv = nn.Conv2d(in_channels=self.din, out_channels=512, kernel_size=3, stride=1, padding=1)

@@ -11,22 +11,35 @@
 from model import DRCNN
 from config import CONFIG
 from train import Trainer, STN_Trainer
-from dataset import get_pic_and_labels, get_data_loader
+from dataset import get_pic_and_labels, get_data_loader, get_stn_loader, get_app_loader
+from utils import save_gt_pics
 from STN import STN
 
 if __name__ == '__main__':
     pic_names, labels = get_pic_and_labels(CONFIG["pics_path"])
-    train_loader, val_loader, test_loader = get_data_loader(pic_names, labels)
-    
-    model = DRCNN(num_cls=len(CONFIG["app_name"]))
+       
+    # model = DRCNN(num_cls=len(CONFIG["app_name"]))
     gt_model = STN(num_cls=len(CONFIG["app_name"]))
     
-    stn_trainer = STN_Trainer(model=gt_model, device=CONFIG["device"], optimizer=CONFIG["STN_optimizer"],
-                    lr=CONFIG["STN_lr"], criterion=CONFIG["STN_criterion"], num_epochs=CONFIG["STN_epoch"])
+    # Step2: train the STN and generate gt for every app
+    for pos_app in CONFIG["app_name"]:
+        train_loader, val_loader, test_loader = get_stn_loader(pic_names, labels, pos_app)  
+        stn_trainer = STN_Trainer(model=gt_model, device=CONFIG["device"], optimizer=CONFIG["STN_optimizer"],
+                        lr=CONFIG["STN_lr"], criterion=CONFIG["STN_criterion"], num_epochs=CONFIG["STN_epoch"])
 
-    # get the ground truth for all data
-    train_gt, val_gt, test_gt = stn_trainer.run(train_loader, val_loader, test_loader)
-    trainer = Trainer(model=model, device=CONFIG["device"], optimizer=CONFIG["optimizer"], 
-                      lr=CONFIG["lr"], criterion=CONFIG["criterion"], num_epochs=CONFIG["epoch"])
+        # get the ground truth for all data
+        stn_trainer.run(train_loader, val_loader, test_loader)
+        
+        # generate the gt boxes for RPN
+        app_loader = get_app_loader(pic_names, labels, pos_app)
+        train_gt = stn_trainer.generate_gt_boxes(app_loader)
+        save_gt_pics(gt=train_gt, app_name=pos_app)
+    # Step2: train the DRCNN
     
-    trainer.run(train_loader, val_loader, test_loader)
+    # prepare loader for DRCNN
+    # train_loader, val_loader, test_loader = get_data_loader(pic_names, labels)
+    
+    # trainer = Trainer(model=model, device=CONFIG["device"], optimizer=CONFIG["optimizer"], 
+    #                   lr=CONFIG["lr"], criterion=CONFIG["criterion"], num_epochs=CONFIG["epoch"])
+    
+    # trainer.run(train_loader, val_loader, test_loader)

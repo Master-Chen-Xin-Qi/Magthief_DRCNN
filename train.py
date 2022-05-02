@@ -10,6 +10,7 @@
 
 from tensorboardX import SummaryWriter
 import torch
+import numpy as np
 from tqdm import tqdm
 from config import CONFIG
 
@@ -119,16 +120,10 @@ class STN_Trainer(object):
             val_writer.add_scalar('Val', val_loss, e)
             if val_loss < min_loss:
                 min_loss = val_loss
-                torch.save(self.model.state_dict(), CONFIG["save_model_path"])
+                torch.save(self.model.state_dict(), CONFIG["save_STN_path"])
                 print('Already save model!')
         acc = self.test(test_loader)
         print(f'Test accuracy is: {acc}%')
-        
-        # generate the gt boxes for RPN
-        train_gt = self.generate_gt_boxes(train_loader)
-        val_gt = self.generate_gt_boxes(val_loader)
-        test_gt = self.generate_gt_boxes(test_loader)
-        return train_gt, val_gt, test_gt
         
     def train_epoch(self, train_loader, e):
         pbar = tqdm(enumerate(train_loader), total=len(train_loader))
@@ -136,6 +131,14 @@ class STN_Trainer(object):
         dataset_size = 0
         for idx, (data, label) in pbar:
             self.optimizer.zero_grad()
+            
+            from PIL import Image
+            import torchvision.transforms as transforms
+            pics = transforms.ToPILImage()(data.squeeze(0)[0, :, :])
+            pics.save('data.png')
+            img = Image.open('data.png')
+            img.show()
+            
             data, label = data.to(self.device), label.to(self.device)
             predict = self.model(data)
             loss = self.criterion(predict, label)
@@ -183,11 +186,16 @@ class STN_Trainer(object):
         return acc
     
     def generate_gt_boxes(self, loader):
+        '''
+        generate the gt boxes for positive labels
+        '''
         self.model.eval()
         pics = []
         with torch.no_grad():
             for idx, (data, label) in enumerate(loader):
+                if label == 0:
+                    continue
                 data, label = data.to(self.device), label.to(self.device)
                 pic = self.model.generate_gt_boxes(data)
-                pics.append(np.array(pic))
+                pics.append(pic)
         return pics    
