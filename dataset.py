@@ -60,16 +60,19 @@ def get_stn_loader(pic_names, labels, pos_app):
     ''' 
     pos_label = label_process(CONFIG["app_name"])[pos_app]  # 根据app名称得到正样本的label
     # 正样本label为1，没有运行app时的label为0
-    labels[np.where(labels != pos_label)] = 0  
-    labels[np.where(labels == pos_label)] = 1
+    for i in range(len(labels)):
+        if labels[i] == pos_label:
+            labels[i] = 1
+        else:
+            labels[i] = 0
     train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, labels, test_size=0.1, shuffle=True)
     train_pics, val_pics, train_labels, val_labels = train_test_split(train_val_pics, train_val_labels, test_size=0.2, shuffle=True)
     train_dataset = MyDataset(train_pics, train_labels)
     val_dataset = MyDataset(val_pics, val_labels)
     test_dataset = MyDataset(test_pics, test_labels)
-    train_loader = DataLoader(train_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
+    test_loader = DataLoader(test_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
     return train_loader, val_loader, test_loader
 
 def get_app_loader(pic_names, labels, pos_app):
