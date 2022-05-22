@@ -53,6 +53,31 @@ def get_data_loader(pic_names, labels):
     test_loader = DataLoader(test_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True)
     return train_loader, val_loader, test_loader
 
+# get data for baseline model (SVM, RF) training
+def get_data(pic_names, labels):
+    train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, labels, test_size=0.1, shuffle=True)
+    train_pics, val_pics, train_labels, val_labels = train_test_split(train_val_pics, train_val_labels, test_size=0.2, shuffle=True)
+    train_data, val_data, test_data = np.array(), np.array(), np.array()
+    for pic_name in train_pics:
+        pic = Image.open(pic_name).convert('L')  # 转为灰度图
+        pic = transforms.ToTensor()(pic)
+        pic = transforms.Resize([60, 60])(pic)  # resize到60*60
+        pic = pic.numpy()
+        train_data = np.append(train_data, pic)
+    for pic_name in val_pics:
+        pic = Image.open(pic_name).convert('L')  # 转为灰度图
+        pic = transforms.ToTensor()(pic)
+        pic = transforms.Resize([60, 60])(pic)  # resize到60*60
+        pic = pic.numpy()
+        val_data = np.append(val_data, pic)
+    for pic_name in test_pics:
+        pic = Image.open(pic_name).convert('L')  # 转为灰度图
+        pic = transforms.ToTensor()(pic)
+        pic = transforms.Resize([60, 60])(pic)  # resize到60*60
+        pic = pic.numpy()
+        test_data = np.append(test_data, pic)
+    return train_data, train_labels, val_data, val_labels, test_data, test_labels
+        
 def get_stn_loader(pic_names, labels, pos_app):
     '''
         get dataloader for STN, label is the positive label, and none-app signals are negative labels,
