@@ -8,6 +8,7 @@
 @Description  : Main function for the project
 '''
 
+import numpy as np
 from model import DRCNN
 from config import CONFIG
 from train import Trainer, STN_Trainer
@@ -27,13 +28,14 @@ if __name__ == '__main__':
         stn_trainer = STN_Trainer(model=gt_model, device=CONFIG["device"], optimizer=CONFIG["STN_optimizer"],
                         lr=CONFIG["STN_lr"], criterion=CONFIG["STN_criterion"], num_epochs=CONFIG["STN_epoch"])
 
-        # get the ground truth for all data
-        stn_trainer.run(train_loader, val_loader, test_loader)
+        # train STN to get the gt 
+        # stn_trainer.run(train_loader, val_loader, test_loader)
         
         # generate the gt boxes for RPN
-        app_loader = get_app_loader(pic_names, labels, pos_app)
+        app_loader = get_app_loader(np.array(pic_names), np.array(labels))
         train_gt = stn_trainer.generate_gt_boxes(app_loader)
         save_gt_pics(gt=train_gt, app_name=pos_app, pic_names=pic_names)
+        
     # Step2: train the DRCNN
     
     # prepare loader for DRCNN

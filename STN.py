@@ -59,9 +59,9 @@ class STN(nn.Module):
         
         # for show
         # from PIL import Image
-        # import torchvision.transforms as transforms
-        # pics = transforms.ToPILImage()(x.squeeze(0)[0, :, :])
-        # pics.save('stn_out.png')
+        import torchvision.transforms as transforms
+        pics = transforms.ToPILImage()(x.squeeze(0)[0, :, :])
+        pics.save('stn_out.png')
         # img = Image.open('stn_out.png')
         # img.show()
         
@@ -78,11 +78,18 @@ class STN(nn.Module):
     
     def generate_box(self, x):
         '''
-        Output: The ground truth box for the RPN
+        Output: The ground truth box for the RPN, don't resize to the original size
+        in the stn block
         '''
-        feature = self.conv_block(x)
-        stn_out = self.stn(feature)
-        return stn_out
+        xs = self.localization(x).view(-1, 10 * 11 * 11)
+        vertical = x.size(2)
+        theta = self.fc_loc(xs)
+        theta.clamp_(0, 1)
+        # 只让STN做剪切变换，theta包含y1和y2，对原始图片进行裁剪
+        y1 = min(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
+        y2 = max(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
+        x = x[:, :, y1: y2]  # y1是在图片的上方，y2是在图片的下方
+        return x
     
     
     

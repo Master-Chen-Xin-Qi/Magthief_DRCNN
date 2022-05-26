@@ -57,26 +57,29 @@ def get_data_loader(pic_names, labels):
 def get_data(pic_names, labels):
     train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, labels, test_size=0.1, shuffle=True)
     train_pics, val_pics, train_labels, val_labels = train_test_split(train_val_pics, train_val_labels, test_size=0.2, shuffle=True)
-    train_data, val_data, test_data = np.array(), np.array(), np.array()
+    train_data, val_data, test_data = np.zeros((1, 3600)), np.zeros((1, 3600)), np.zeros((1, 3600))
     for pic_name in train_pics:
         pic = Image.open(pic_name).convert('L')  # 转为灰度图
         pic = transforms.ToTensor()(pic)
         pic = transforms.Resize([60, 60])(pic)  # resize到60*60
-        pic = pic.numpy()
-        train_data = np.append(train_data, pic)
+        pic = pic.numpy().reshape(1, -1)
+        train_data = np.vstack((train_data, pic))
+    print(f'Train data finish! Len:{len(train_data)}')
     for pic_name in val_pics:
         pic = Image.open(pic_name).convert('L')  # 转为灰度图
         pic = transforms.ToTensor()(pic)
         pic = transforms.Resize([60, 60])(pic)  # resize到60*60
-        pic = pic.numpy()
-        val_data = np.append(val_data, pic)
+        pic = pic.numpy().reshape(1, -1)
+        val_data = np.vstack((val_data, pic))
+    print(f'Val data finish! Len:{len(val_data)}')
     for pic_name in test_pics:
         pic = Image.open(pic_name).convert('L')  # 转为灰度图
         pic = transforms.ToTensor()(pic)
         pic = transforms.Resize([60, 60])(pic)  # resize到60*60
-        pic = pic.numpy()
-        test_data = np.append(test_data, pic)
-    return train_data, train_labels, val_data, val_labels, test_data, test_labels
+        pic = pic.numpy().reshape(1, -1)
+        test_data = np.vstack((test_data, pic))
+    print(f'Train data finish! Len:{len(test_data)}')
+    return train_data[1:, :], train_labels, val_data[1:, :], val_labels, test_data[1:, :], test_labels
         
 def get_stn_loader(pic_names, labels, pos_app):
     '''
@@ -84,7 +87,8 @@ def get_stn_loader(pic_names, labels, pos_app):
         we train STN as a two-class classifification.
     ''' 
     pos_label = label_process(CONFIG["app_name"])[pos_app]  # 根据app名称得到正样本的label
-    # 正样本label为1，没有运行app时的label为0
+    
+    # 正样本label为1，没有运行app (或运行其他app)时的label为0
     for i in range(len(labels)):
         if labels[i] == pos_label:
             labels[i] = 1
@@ -100,13 +104,13 @@ def get_stn_loader(pic_names, labels, pos_app):
     test_loader = DataLoader(test_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
     return train_loader, val_loader, test_loader
 
-def get_app_loader(pic_names, labels, pos_app):
-    pos_label = label_process(CONFIG["app_name"])[pos_app]  # 根据app名称得到正样本的label
-    pos_index = np.where(labels == pos_label)[0]
+def get_app_loader(pic_names, labels):
+    # 正样本的label为1
+    pos_index = np.where(labels == 1)[0]
     pos_pics = pic_names[pos_index]
     pos_labels = labels[pos_index]
     app_dataset = MyDataset(pos_pics, pos_labels)
-    app_loader = DataLoader(app_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=False)
+    app_loader = DataLoader(app_dataset, batch_size=CONFIG["STN_GT_BATCH_SIZE"], shuffle=False)
     return app_loader
     
 # 每个label一个folder，每个folder下是该类别的所有图片，遍历得到所有文件名和label

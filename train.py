@@ -136,8 +136,8 @@ class STN_Trainer(object):
             import torchvision.transforms as transforms
             pics = transforms.ToPILImage()(data.squeeze(0)[0, :, :])
             pics.save('data.png')
-            img = Image.open('data.png')
-            img.show()
+            # img = Image.open('data.png')
+            # img.show()
             
             data, label = data.to(self.device), label.to(self.device)
             predict = self.model(data)
@@ -166,11 +166,12 @@ class STN_Trainer(object):
             total_loss += (loss.item() * CONFIG["BATCH_SIZE"])
             dataset_size += CONFIG["BATCH_SIZE"]
             epoch_loss = total_loss / dataset_size
-        print(f"Epoch: {e} Validate Loss: {epoch_loss:.4f}")
+        print(f"Epoch: {e}  Validate Loss: {epoch_loss:.4f}")
         return epoch_loss
     
     def test(self, test_loader):
         self.model.eval()
+        self.model.load_state_dict(torch.load(CONFIG["save_STN_path"]))
         correct = 0
         total = 0
         lambda_val = 0
@@ -190,12 +191,11 @@ class STN_Trainer(object):
         generate the gt boxes for positive labels
         '''
         self.model.eval()
+        self.model.load_state_dict(torch.load(CONFIG["save_STN_path"]))
         pics = []
         with torch.no_grad():
-            for idx, (data, label) in enumerate(loader):
-                if label == 0:
-                    continue
+            for _, (data, label) in enumerate(loader):
                 data, label = data.to(self.device), label.to(self.device)
-                pic = self.model.generate_gt_boxes(data)
+                pic = self.model.generate_box(data)
                 pics.append(pic)
         return pics    
