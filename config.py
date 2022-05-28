@@ -10,11 +10,12 @@
 import torch
 
 CONFIG= {
-    "app_name" : ["netmusic", "taobao", "wzry"],
+    "app_name" : ["netmusic", "taobao", "wzry", "qqmusic", "wechat", "qq", "weibo", "douyin", "bilibili"],
     "device" : "cuda" if torch.cuda.is_available() else "cpu",
     "SLIDE_RATE" : 0.15,
+    "DATA_MIN": 12,
     "WINDOW_LEN" : 300,
-    "FS" : 50,
+    "FS" : 100,  
     "BATCH_SIZE" : 1,
     "STN_BATCH_SIZE" : 32,
     "STN_GT_BATCH_SIZE" : 1,  # 产生gt时的batchsize

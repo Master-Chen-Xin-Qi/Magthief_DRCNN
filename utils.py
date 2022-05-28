@@ -46,9 +46,11 @@ def label_process(different_name):
 def prepare_data(folder_name, save_path):
     label_dict = label_process(CONFIG["app_name"])
     df = divide_files_by_name(folder_name, CONFIG["app_name"])
-    all_data, all_label = process_file_data(df, label_dict, save_path)
+    all_data, all_label, len_dict = process_file_data(df, label_dict, save_path)
     np.save('./mag_np/all_data.npy', all_data)
-    print('ALL data have been saved!')
+    np.save('./mag_np/all_label.npy', all_label)
+    print('ALL data and labels have been saved!')
+    return len_dict
     
 # Read files of different categories and divide into several parts
 def divide_files_by_name(folder_name, different_category):
@@ -67,10 +69,14 @@ def divide_files_by_name(folder_name, different_category):
 def process_file_data(df, label_dict, save_path):
     all_data = np.zeros((1, CONFIG["WINDOW_LEN"]))
     all_label = np.zeros((1, 1))
+    len_dict = {}  # 向字典中写入数据长度
     for app in df.keys():
         label = label_dict[app]
         mag_data_total = np.zeros((1, CONFIG["WINDOW_LEN"]))
         label_total = np.zeros((1, 1))
+        if df[app] == []:
+            print("No data for " + app)
+            continue 
         for single_file in df[app]:
             mag_data, total_num = read_single_file_data(single_file)
             mag_data_total = np.vstack((mag_data_total, mag_data))
@@ -80,18 +86,21 @@ def process_file_data(df, label_dict, save_path):
         mag_data_total = mag_data_total.astype('float32')
         label_total = label_total[1:]
         np.save(save_path+f'{app}_' + str(CONFIG["WINDOW_LEN"]), mag_data_total)
+        len_dict[app] = len(mag_data_total)
         all_data = np.vstack((all_data, mag_data_total))
         all_label = np.vstack((all_label, label_total))
         print(f'{app} data have been saved!')
     all_data = all_data[1:]
     all_label = all_label[1:]
-    return all_data, all_label
+    return all_data, all_label, len_dict
     
     
 # 读取每一个文件中的数据
 def read_single_file_data(single_file_name):
     mag_data = []
     fid = open(single_file_name, 'r')
+    
+    # Iphone data type
     for line in fid:
         if 'loggingTime' in line or ',,,,,' in line:  # Wrong data type
             continue
@@ -100,6 +109,23 @@ def read_single_file_data(single_file_name):
         data_x, data_y, data_z = float(data[-4]), float(data[-3]), float(data[-2])
         data_tmp = math.sqrt(data_x**2 + data_y**2 + data_z**2)
         mag_data.append(data_tmp)
+    
+    # Android data type
+    # discard_len = 2*CONFIG["FS"]  # data sample that we want to discard, because of the app switch, set to 2s
+    # idx = 0
+    # for line in fid:
+    #     if idx < discard_len:
+    #         idx += 1
+    #         continue
+    #     if 'timestap' in line or line == '\n':  # Start line or last line
+    #         continue
+    #     line = line.strip('\n')
+    #     line = line.split(',')
+    #     data_x, data_y, data_z = float(line[0]), float(line[1]), float(line[2])
+    #     data_tmp = math.sqrt(data_x**2 + data_y**2 + data_z**2)
+    #     mag_data.append(data_tmp)
+    #     if(len(mag_data)==CONFIG["DATA_MIN"]*60*CONFIG["FS"]):
+    #         break
     slide_data = slide_window(mag_data)
     total_num = slide_data.shape[0]
     return slide_data, total_num
@@ -167,17 +193,18 @@ def save_gt_pics(gt, app_name, pic_names):
         pic.save(f'./gt_figs/{app_name}/{pic_id}.png')
     print(f'Already generate {len(gt)} pictures for {app_name}!')
 
-# if __name__ == '__main__':
-    # folder_name = './raw_mag_data'
-    # save_path = './mag_np'
-    # # prepare_data(folder_name, save_path)
-    # data = np.load('./data_np/mag_np/all_data.npy')
-    # net_len = len(np.load('./data_np/mag_np/netmusic_300.npy'))
-    # taobao_len = len(np.load('./data_np/mag_np/taobao_300.npy'))
-    # wzry_len = len(np.load('./data_np/mag_np/wzry_300.npy'))
-    # print(f"net_len: {net_len}, taobao_len: {taobao_len}, wzry_len: {wzry_len}")
-    # min_max_data = min_max(data)
-    # spectrum(min_max_data[:net_len], 'netmusic')
-    # spectrum(min_max_data[net_len:net_len+taobao_len], 'taobao')
-    # spectrum(min_max_data[net_len+taobao_len:], 'wzry')
+if __name__ == '__main__':
+    folder_name = './raw_mag_data'
+    save_path = './mag_np/'
+    len_dict = prepare_data(folder_name, save_path)
+    data = np.load('./mag_np/all_data.npy')
+    min_max_data = min_max(data)
+    
+    start_idx = 0
+    for app_name in len_dict:
+        app_len = len_dict[app_name]
+        spectrum(min_max_data[start_idx:start_idx+app_len], app_name=app_name)
+        start_idx = start_idx + app_len
+    print('All figures have been saved!')
+        
     
