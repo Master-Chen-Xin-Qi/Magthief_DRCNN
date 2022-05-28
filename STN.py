@@ -26,20 +26,23 @@ class STN(nn.Module):
             nn.ReLU(),
         )
         self.localization = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=(7, 7)),
+            nn.Conv2d(1, 2, kernel_size=(7, 7)),
             nn.MaxPool2d(2, stride=2),
-            nn.ReLU(True),
-            nn.Conv2d(8, 10, kernel_size=(5, 5)),
+            nn.ReLU(),
+            nn.Conv2d(2, 4, kernel_size=(5, 5)),
             nn.MaxPool2d(2, stride=2),
-            nn.ReLU(True)
+            nn.ReLU()
         )
-        # Regressor for the 3 * 2 affine matrix
+        # Regressor for the 2 axis of the box
         self.fc_loc = nn.Sequential(
-            nn.Linear(10 * 11 * 11, 32),
-            nn.ReLU(True),
-            nn.Linear(32, 2),
-            nn.LayerNorm(2)
+            nn.Linear(484, 64),
+            nn.ReLU(),
+            nn.Linear(64, 2),
         )
+        # initialize the weights and biases
+        # self.fc_loc[2].weight.data.zero_()
+        # self.fc_loc[2].bias.data.copy_(torch.tensor([0.3, 0.7], dtype=torch.float))
+        
         self.classifier = nn.Sequential(
             nn.Linear(64 * 32 * 32, 128),
             nn.ReLU(),
@@ -48,48 +51,40 @@ class STN(nn.Module):
             
     # Spatial transformer network forward function
     def stn(self, x):
-        xs = self.localization(x).view(-1, 10 * 11 * 11)
+        xs = self.localization(x).view(-1, 484)
+        bs = x.size(0)
         vertical = x.size(2)
         theta = self.fc_loc(xs)
         theta.clamp_(0, 1)
-        # 只让STN做剪切变换，theta包含y1和y2，对原始图片进行裁剪
-        y1 = min(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
-        y2 = max(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
-        x = x[:, :, y1: y2]  # y1是在图片的上方，y2是在图片的下方
-        
-        # for show
-        # from PIL import Image
-        import torchvision.transforms as transforms
-        pics = transforms.ToPILImage()(x.squeeze(0)[0, :, :])
-        pics.save('stn_out.png')
-        # img = Image.open('stn_out.png')
-        # img.show()
-        
         # Resize the cropped picture to the same size as the original picture (batch, channel, height, width)
         resize = Resize((vertical, vertical))  # default is bilinear
-        out = resize(x)
-        return out
+        for i in range(bs):
+            # 只让STN做剪切变换，theta包含y1和y2，对原始图片进行裁剪，y1取小值，y2取大值
+            y1 = int(torch.min(theta[i, :], dim=0)[0] * vertical)
+            y2 = int(torch.max(theta[i, :], dim=0)[0] * vertical)
+            x[i, :, :, :] = resize(x[i, :, y1: y2])  # y1是在图片的上方，y2是在图片的下方 
+        return x
     
     def forward(self, x):
         stn_out = self.stn(x)
         feature = self.conv_block(stn_out)
         out = self.classifier(feature.view(-1, 64 * 32 * 32))
-        return F.log_softmax(out, dim=1)
+        return out
     
     def generate_box(self, x):
         '''
         Output: The ground truth box for the RPN, don't resize to the original size
         in the stn block
         '''
-        xs = self.localization(x).view(-1, 10 * 11 * 11)
+        xs = self.localization(x).view(-1, 484)
         vertical = x.size(2)
         theta = self.fc_loc(xs)
         theta.clamp_(0, 1)
         # 只让STN做剪切变换，theta包含y1和y2，对原始图片进行裁剪
         y1 = min(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
         y2 = max(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
-        x = x[:, :, y1: y2]  # y1是在图片的上方，y2是在图片的下方
-        return x
+        x = x[:, :, y1: y2]  # y1是在图片的上方，y2是在图片的下方, (y1, y2)就确定了box的位置
+        return x, y1, y2  
     
     
     

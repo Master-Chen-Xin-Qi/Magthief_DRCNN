@@ -166,15 +166,11 @@ def min_max(data):
     min_max_data = min_max_scalar.fit_transform(data)
     return min_max_data
     
-
 # compute the spectrum of window data
 def spectrum(data, app_name):
     for i in range(len(data)):
         single_data = data[i, :].reshape(-1)
         powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(single_data, NFFT=64, Fs=CONFIG["FS"], noverlap=32)
-        # plt.ylabel('Frequency [Hz]')
-        # plt.xlabel('Time [sec]')
-        # plt.colorbar()
         plt.axis('off')
         plt.savefig(f'./figs/{app_name}/' + str(i) + '.png', bbox_inches='tight', pad_inches=0)
         plt.close('all')
@@ -192,6 +188,25 @@ def save_gt_pics(gt, app_name, pic_names):
         pic_id = int(pic_str_id[1:-4])  # remove '.png' in the end
         pic.save(f'./gt_figs/{app_name}/{pic_id}.png')
     print(f'Already generate {len(gt)} pictures for {app_name}!')
+
+
+def delete_train_his(STN_flag, DRCNN_flag):
+    if STN_flag:
+        for root, _, files in os.walk('./logs/STN_train'):
+            for f in files:
+                os.remove('./logs/STN_train/' + f)
+        for root, _, files in os.walk('./logs/STN_val'):
+            for f in files:
+                os.remove('./logs/STN_val/' + f)
+        print('All STN logs have been deleted!')
+    if DRCNN_flag:
+        for root, _, files in os.walk('./logs/train'):
+            for f in files:
+                os.remove('./logs/train/' + f)
+        for root, _, files in os.walk('./logs/val'):
+            for f in files:
+                os.remove('./logs/val/' + f)
+        print('All DRCNN logs have been deleted!')
 
 if __name__ == '__main__':
     folder_name = './raw_mag_data'

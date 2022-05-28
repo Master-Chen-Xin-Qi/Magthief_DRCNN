@@ -12,6 +12,7 @@ from tensorboardX import SummaryWriter
 import torch
 import numpy as np
 from tqdm import tqdm
+import os
 from config import CONFIG
 
 class Trainer(object):
@@ -109,7 +110,7 @@ class STN_Trainer(object):
         self.criterion = criterion
         self.num_epochs = num_epochs
         
-    def run(self, train_loader, val_loader, test_loader):
+    def run(self, train_loader, val_loader, test_loader, pos_app):
         train_writer = SummaryWriter(log_dir="./logs/STN_train")
         val_writer = SummaryWriter(log_dir="./logs/STN_val")
         min_loss = float("inf")
@@ -120,7 +121,7 @@ class STN_Trainer(object):
             val_writer.add_scalar('Val', val_loss, e)
             if val_loss < min_loss:
                 min_loss = val_loss
-                torch.save(self.model.state_dict(), CONFIG["save_STN_path"])
+                torch.save(self.model.state_dict(), CONFIG["save_STN_path"]+'_'+pos_app+'.pt')
                 print('Already save model!')
         acc = self.test(test_loader)
         print(f'Test accuracy is: {acc}%')
@@ -132,10 +133,11 @@ class STN_Trainer(object):
         for idx, (data, label) in pbar:
             self.optimizer.zero_grad()
             
-            from PIL import Image
-            import torchvision.transforms as transforms
-            pics = transforms.ToPILImage()(data.squeeze(0)[0, :, :])
-            pics.save('data.png')
+            # show the figure
+            # from PIL import Image
+            # import torchvision.transforms as transforms
+            # pics = transforms.ToPILImage()(data.squeeze(0)[0, :, :])
+            # pics.save('data.png')
             # img = Image.open('data.png')
             # img.show()
             
@@ -186,16 +188,28 @@ class STN_Trainer(object):
         acc = 100 * correct / total
         return acc
     
-    def generate_gt_boxes(self, loader):
+    def generate_gt_boxes(self, loader, pos_app):
         '''
         generate the gt boxes for positive labels
         '''
         self.model.eval()
-        self.model.load_state_dict(torch.load(CONFIG["save_STN_path"]))
-        pics = []
+        self.model.load_state_dict(torch.load(CONFIG["save_STN_path"]+'_'+pos_app+'.pt'))
+        
+        # save gt box figs
+        # pics = []
+        # with torch.no_grad():
+        #     for _, (data, label) in enumerate(loader):
+        #         data, label = data.to(self.device), label.to(self.device)
+        #         pic, = self.model.generate_box(data)
+        #         pics.append(pic)
+        # return pics    
+
+        # save gt box y1, y2 and label
+        labels = []
         with torch.no_grad():
             for _, (data, label) in enumerate(loader):
                 data, label = data.to(self.device), label.to(self.device)
-                pic = self.model.generate_box(data)
-                pics.append(pic)
-        return pics    
+                pic, y1, y2 = self.model.generate_box(data)
+                labels.append(np.array((y1, y2)))
+        np.save(f'./gt/{pos_app}.npy', np.array(labels))
+                
