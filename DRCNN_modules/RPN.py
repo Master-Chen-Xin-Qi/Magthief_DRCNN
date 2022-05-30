@@ -9,6 +9,7 @@
 '''
 
 from DRCNN_modules.creator_tool import ProposalCreator
+import torch
 import torch.nn as nn
 import six
 import numpy as np
@@ -51,7 +52,7 @@ class RegionProposalNetwork(nn.Module):
     """
 
     def __init__(
-            self, in_channels=512, mid_channels=512, ratios=[0.5, 1, 2],
+            self, in_channels=64, mid_channels=64, ratios=[0.5, 1, 2],
             anchor_scales=[8, 16, 32], feat_stride=16,
             proposal_creator_params=dict(),
     ):
@@ -217,10 +218,9 @@ def enumerate_shifted_anchor(anchor_base, feat_stride, height, width):
     # return (K*A, 4)
 
     # !TODO: add support for torch.CudaTensor
-    xp = cuda.get_array_module(anchor_base)
-    import torch as t
-    shift_y = t.arange(0, height * feat_stride, feat_stride)
-    shift_x = t.arange(0, width * feat_stride, feat_stride)
+    xp = np
+    shift_y = torch.arange(0, height * feat_stride, feat_stride)
+    shift_x = torch.arange(0, width * feat_stride, feat_stride)
     shift_x, shift_y = xp.meshgrid(shift_x, shift_y)
     shift = xp.stack((shift_y.ravel(), shift_x.ravel(),
                       shift_y.ravel(), shift_x.ravel()), axis=1)

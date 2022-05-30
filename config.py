@@ -10,6 +10,8 @@
 import torch
 app = ["netmusic", "qqmusic", "taobao", "wzry", "wechat", "qq", "weibo", "douyin", "bilibili",
                   "aiqiyi", "subway", "gaode", "baidu", "jingdong", "word"]
+
+app = ["aiqiyi", "baidu", "netmusic"]
 app.sort()
 CONFIG= {
     "app_name" : app,
@@ -18,18 +20,18 @@ CONFIG= {
     "WINDOW_LEN" : 500,
     "FS" : 100,  
     "BATCH_SIZE" : 1,  # 训练DRCNN的batchsize
-    "STN_BATCH_SIZE" : 32,  # 训练STN的batchsize
+    "STN_BATCH_SIZE" : 16,  # 训练STN的batchsize
     "STN_GT_BATCH_SIZE" : 1,  # 产生gt时的batchsize
     "epoch" : 100,
-    "STN_epoch" : 500,
+    "STN_epoch" : 1,
     "optimizer" : torch.optim.Adam,
     "STN_optimizer" : torch.optim.Adam,
     "lr" : 1e-4, 
-    "STN_lr" : 1e-1,
+    "STN_lr" : 1e-3,
     "criterion" : torch.nn.CrossEntropyLoss(),
     "STN_criterion" : torch.nn.CrossEntropyLoss(),
     "pics_path" : "./figs",
-    "save_model_path" : "./save_checkpoints/DRCNN/best_model.pt",
+    "save_model_path" : "./save_checkpoints/DRCNN/best_model",
     "save_STN_path" : "./save_checkpoints/STN/best_stn_model",
     "anchor_scales" : [8, 16, 32],
     "anchor_ratios" : [0.5, 1, 2],

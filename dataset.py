@@ -49,7 +49,7 @@ class DRCNN_Dataset(Dataset):
         self.labels = labels
     
     def __getitem__(self, index):
-        pic_file = self.pic_names[index]
+        pic_file = self.pics_name[index]
         box, label = self.labels[index]  # box, label
         pic = Image.open(pic_file).convert('L')  # 转为灰度图
         pic = transforms.ToTensor()(pic)
@@ -57,6 +57,9 @@ class DRCNN_Dataset(Dataset):
         label = torch.tensor(label, dtype=torch.long)
         box = torch.tensor(box, dtype=torch.long)
         return pic, box, label
+    
+    def __len__(self):
+        return len(self.pics_name)
       
 # get dataloader for DRCNN
 def get_data_loader(pic_names, drcnn_labels):
@@ -105,16 +108,18 @@ def get_stn_loader(pic_names, labels, pos_app):
         get dataloader for STN, label is the positive label, and none-app signals are negative labels,
         we train STN as a two-class classifification.
     ''' 
+    from copy import deepcopy
+    stn_labels = deepcopy(labels)
     pos_label = label_process(CONFIG["app_name"])[pos_app]  # 根据app名称得到正样本的label
     app_len = 0
     # 正样本label为1，没有运行app (或运行其他app)时的label为0
     for i in range(len(labels)):
-        if labels[i] == pos_label:
-            labels[i] = 1
+        if stn_labels[i] == pos_label:
+            stn_labels[i] = 1
             app_len += 1
         else:
-            labels[i] = 0
-    train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, labels, test_size=0.1, shuffle=True)
+            stn_labels[i] = 0
+    train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, stn_labels, test_size=0.1, shuffle=True)
     train_pics, val_pics, train_labels, val_labels = train_test_split(train_val_pics, train_val_labels, test_size=0.2, shuffle=True)
     train_dataset = MyDataset(train_pics, train_labels)
     val_dataset = MyDataset(val_pics, val_labels)
@@ -126,10 +131,10 @@ def get_stn_loader(pic_names, labels, pos_app):
 
 def get_app_loader(pic_names, labels):
     # 正样本的label为1
-    pos_index = np.where(labels == 1)[0]
-    pos_pics = pic_names[pos_index]
-    pos_labels = labels[pos_index]
-    app_dataset = MyDataset(pos_pics, pos_labels)
+    # pos_index = np.where(labels == 1)[0]
+    # pos_pics = pic_names[pos_index]
+    # pos_labels = labels[pos_index]
+    app_dataset = MyDataset(pic_names, labels)
     app_loader = DataLoader(app_dataset, batch_size=CONFIG["STN_GT_BATCH_SIZE"], shuffle=False)
     return app_loader
     

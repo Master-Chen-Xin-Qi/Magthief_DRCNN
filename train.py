@@ -53,11 +53,10 @@ class Trainer(object):
         pbar = tqdm(enumerate(train_loader), total=len(train_loader))
         total_loss = 0.0
         dataset_size = 0
-        for idx, (img, bbx, label, scale) in pbar:
-            img, bbx, label, scale = img.to(self.device), bbx.to(self.device), \
-                                label.to(self.device), scale.to(self.device)
+        for idx, (img, bbx, label) in pbar:
+            img, bbx, label = img.to(self.device), bbx.to(self.device), label.to(self.device)
             self.optimizer.zero_grad()
-            losses = self.forward(img, bbx, label, scale)
+            losses = self.forward(img, bbx, label)
             losses.total_loss.backward()
             self.optimizer.step()
             total_loss += (losses.total_loss.item() * CONFIG["BATCH_SIZE"])
@@ -85,7 +84,7 @@ class Trainer(object):
         print(f"Epoch: {e} Validate Loss: {epoch_loss:.4f}")
         return epoch_loss
     
-    def forward(self, imgs, bboxes, labels, scale):
+    def forward(self, imgs, bboxes, labels):
         """Forward Faster R-CNN and calculate losses.
 
         Here are notations used.
@@ -117,10 +116,10 @@ class Trainer(object):
         _, _, H, W = imgs.shape
         img_size = (H, W)
 
-        features = self.faster_rcnn.extractor(imgs)
+        features = self.model.extractor(imgs)
 
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.faster_rcnn.rpn(features, img_size, scale)
+            self.model.rpn(features, img_size, scale=1)
 
         # Since batch size is one, convert variables to singular form
         bbox = bboxes[0]
@@ -201,11 +200,11 @@ class STN_Trainer(object):
         self.criterion = criterion
         self.num_epochs = num_epochs
         
-    def run(self, train_loader, val_loader, test_loader, pos_app):
-        train_writer = SummaryWriter(log_dir="./logs/STN_train")
-        val_writer = SummaryWriter(log_dir="./logs/STN_val")
+    def run(self, train_loader, val_loader, pos_app):
+        train_writer = SummaryWriter(log_dir=f"./logs/STN_train/{pos_app}")
+        val_writer = SummaryWriter(log_dir=f"./logs/STN_val/{pos_app}")
         min_loss = float("inf")
-        for e in range(self.num_epochs):
+        for e in range(1, self.num_epochs+1):
             train_loss = self.train_epoch(train_loader, e)
             val_loss = self.val_epoch(val_loader, e)
             train_writer.add_scalar('Train', train_loss, e)
@@ -214,8 +213,6 @@ class STN_Trainer(object):
                 min_loss = val_loss
                 torch.save(self.model.state_dict(), CONFIG["save_STN_path"]+'_'+pos_app+'.pt')
                 print('Already save model!')
-        acc = self.test(test_loader)
-        print(f'Test accuracy is: {acc}%')
         
     def train_epoch(self, train_loader, e):
         pbar = tqdm(enumerate(train_loader), total=len(train_loader))
@@ -241,8 +238,6 @@ class STN_Trainer(object):
             dataset_size += CONFIG["BATCH_SIZE"]
             epoch_loss = total_loss / dataset_size
             pbar.set_description(f"Epoch: {e}  Iter: {idx}  Train Loss: {epoch_loss:.4f}")
-            pbar.refresh()
-            pbar.update(1)
         return epoch_loss
     
     def val_epoch(self, val_loader, e):
@@ -262,18 +257,17 @@ class STN_Trainer(object):
         print(f"Epoch: {e}  Validate Loss: {epoch_loss:.4f}")
         return epoch_loss
     
-    def test(self, test_loader):
+    def test(self, test_loader, pos_app):
         self.model.eval()
-        self.model.load_state_dict(torch.load(CONFIG["save_STN_path"]))
+        self.model.load_state_dict(torch.load(CONFIG["save_STN_path"]+'_'+pos_app+'.pt'))
         correct = 0
         total = 0
-        lambda_val = 0
         with torch.no_grad():
             for x, y in test_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
-                class_predict, _= self.model(x, lambda_val)
-                _, predicted = torch.max(class_predict.data, 1)
+                class_predict = self.model(x)
+                predicted = torch.max(class_predict.data, 1)[1]
                 total += y.size(0)
                 correct += (predicted == y).sum().item()
         acc = 100 * correct / total
@@ -297,14 +291,12 @@ class STN_Trainer(object):
 
         # save gt box y1, y2 and label
         labels = []
-        pics = []
         with torch.no_grad():
             for _, (data, label) in enumerate(loader):
-                data, label = data.to(self.device), label.to(self.device)
-                pic, y1, y2 = self.model.generate_box(data)
-                pics.append(pic)
-                labels.append([(y1, y2), label])
-        return pics, labels
+                data = data.to(self.device)
+                y1, y2 = self.model.generate_box(data)
+                labels.append([(y1, y2), label.item()])
+        return labels
      
      
 def _smooth_l1_loss(x, t, in_weight, sigma):

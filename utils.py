@@ -39,6 +39,7 @@ def label_process(different_name):
             f.truncate(0)  # delete previous content
             f.write(item + "\n")
         print("^_^ write success")
+        pass
     else:
         with open(path, "a", encoding='utf-8') as f:
             f.write(item + "\n")
@@ -173,7 +174,18 @@ def min_max(data):
 def spectrum(data, app_name):
     for i in range(len(data)):
         single_data = data[i, :].reshape(-1)
-        powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(single_data, NFFT=32, Fs=CONFIG["FS"], noverlap=30)
+        NFFT = 2**7
+        spectrum, freqs, time, imageAxis = plt.specgram(single_data, 
+                                    NFFT=NFFT, 
+                                    window=np.hanning(M=NFFT),
+                                    Fs=CONFIG["FS"], 
+                                    noverlap=NFFT*0.8,
+                                    sides='onesided',
+                                    mode='psd',
+                                    scale_by_freq=True,
+                                    # cmap="plasma",  #color
+                                    detrend='linear',
+                                    xextent=None)
         plt.axis('off')
         plt.savefig(f'./figs/{app_name}/' + str(i) + '.png', bbox_inches='tight', pad_inches=0)
         plt.close('all')
@@ -193,15 +205,15 @@ def save_gt_pics(gt, app_name, pic_names):
     print(f'Already generate {len(gt)} pictures for {app_name}!')
 
 # 删除tensorboard历史
-def delete_train_his(STN_flag, DRCNN_flag):
+def delete_train_his(app, STN_flag, DRCNN_flag):
     if STN_flag:
-        for root, _, files in os.walk('./logs/STN_train'):
+        for root, _, files in os.walk(f'./logs/STN_train/{app}/'):
             for f in files:
-                os.remove('./logs/STN_train/' + f)
-        for root, _, files in os.walk('./logs/STN_val'):
+                os.remove(f'./logs/STN_train/{app}/' + f)
+        for root, _, files in os.walk(f'./logs/STN_val/{app}/'):
             for f in files:
-                os.remove('./logs/STN_val/' + f)
-        print('All STN logs have been deleted!')
+                os.remove(f'./logs/STN_val/{app}/' + f)
+        print(f'All STN for {app} logs have been deleted!')
     if DRCNN_flag:
         for root, _, files in os.walk('./logs/train'):
             for f in files:
