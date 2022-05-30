@@ -8,13 +8,14 @@
 @Description  : Basic parameters for the project
 '''
 import torch
-
+app = ["netmusic", "qqmusic", "taobao", "wzry", "wechat", "qq", "weibo", "douyin", "bilibili",
+                  "aiqiyi", "subway", "gaode", "baidu", "jingdong", "word"]
+app.sort()
 CONFIG= {
-    "app_name" : ["netmusic", "taobao", "wzry", "qqmusic", "wechat", "qq", "weibo", "douyin", "bilibili"],
+    "app_name" : app,
     "device" : "cuda" if torch.cuda.is_available() else "cpu",
     "SLIDE_RATE" : 0.15,
-    "DATA_MIN": 12,
-    "WINDOW_LEN" : 300,
+    "WINDOW_LEN" : 500,
     "FS" : 100,  
     "BATCH_SIZE" : 16,  # 训练DRCNN的batchsize
     "STN_BATCH_SIZE" : 32,  # 训练STN的batchsize

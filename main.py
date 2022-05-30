@@ -9,12 +9,13 @@
 '''
 
 import numpy as np
-from model import DRCNN
+# from model import DRCNN
 from config import CONFIG
 from train import Trainer, STN_Trainer
 from dataset import get_pic_and_labels, get_data_loader, get_stn_loader, get_app_loader
 from utils import save_gt_pics, delete_train_his, set_seed
 from STN import STN
+from DRCNN_modules.DRCNN import DRCNN
 
 if __name__ == '__main__':
     set_seed(seed=42)

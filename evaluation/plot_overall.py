@@ -17,14 +17,14 @@ if __name__ == '__main__':
     x = np.arange(6)
     plt.ylim(0, 1)
     for i in range(len(in_app)):
-        plt.bar(x[i], f1[i], width=0.5, color='g')
+        plt.bar(x[i], f1[i], width=0.5, color='g', alpha=0.5)
     plt.xticks(x, in_app)
     plt.ylabel("Macro F1 score")
     plt.show()
     
     
     
-    app = ["Glory of Kings," "PUBG", "Netease Cloud Music", "QQ Music", "Bilibili", "Aiqiyi", 
+    app = ["Hornor of Kings," "PUBG", "Netease Cloud Music", "QQ Music", "Bilibili", "Aiqiyi", 
            "Tiktok", "Taobao", "Jingdong", "Word", "Baidu map", "Gaode map", "WeChat", "QQ"]
     x = np.arange(len(app))
     f1_app = []

@@ -35,10 +35,13 @@ def label_process(different_name):
     item = json.dumps(label_dict)
     path = './name_to_label.txt'
     if os.path.exists(path):
-        return label_dict
+        with open(path, "a", encoding='utf-8') as f:
+            f.truncate(0)  # delete previous content
+            f.write(item + "\n")
+            print("^_^ write success")
     else:
         with open(path, "a", encoding='utf-8') as f:
-            f.write(item + ",\n")
+            f.write(item + "\n")
             print("^_^ write success")
     return label_dict
 
@@ -101,31 +104,31 @@ def read_single_file_data(single_file_name):
     fid = open(single_file_name, 'r')
     
     # Iphone data type
-    for line in fid:
-        if 'loggingTime' in line or ',,,,,' in line:  # Wrong data type
-            continue
-        line = line.strip('\n')
-        data = line.split(',')
-        data_x, data_y, data_z = float(data[-4]), float(data[-3]), float(data[-2])
-        data_tmp = math.sqrt(data_x**2 + data_y**2 + data_z**2)
-        mag_data.append(data_tmp)
-    
-    # Android data type
-    # discard_len = 2*CONFIG["FS"]  # data sample that we want to discard, because of the app switch, set to 2s
-    # idx = 0
     # for line in fid:
-    #     if idx < discard_len:
-    #         idx += 1
-    #         continue
-    #     if 'timestap' in line or line == '\n':  # Start line or last line
+    #     if 'loggingTime' in line or ',,,,,' in line:  # Wrong data type
     #         continue
     #     line = line.strip('\n')
-    #     line = line.split(',')
-    #     data_x, data_y, data_z = float(line[0]), float(line[1]), float(line[2])
+    #     data = line.split(',')
+    #     data_x, data_y, data_z = float(data[-4]), float(data[-3]), float(data[-2])
     #     data_tmp = math.sqrt(data_x**2 + data_y**2 + data_z**2)
     #     mag_data.append(data_tmp)
-    #     if(len(mag_data)==CONFIG["DATA_MIN"]*60*CONFIG["FS"]):
-    #         break
+    
+    # Android data type
+    discard_len = 3 *CONFIG["FS"]  # data sample that we want to discard, because of the app switch, set to 2s
+    idx = 0
+    for line in fid:
+        if idx < discard_len:
+            idx += 1
+            continue
+        if 'timestap' in line or line == '\n':  # Start line or last line
+            continue
+        line = line.strip('\n')
+        line = line.split(',')
+        data_x, data_y, data_z = float(line[0]), float(line[1]), float(line[2])
+        data_tmp = math.sqrt(data_x**2 + data_y**2 + data_z**2)
+        mag_data.append(data_tmp)
+        # if(len(mag_data)==CONFIG["DATA_MIN"]*60*CONFIG["FS"]):
+        #     break
     slide_data = slide_window(mag_data)
     total_num = slide_data.shape[0]
     return slide_data, total_num
@@ -170,7 +173,7 @@ def min_max(data):
 def spectrum(data, app_name):
     for i in range(len(data)):
         single_data = data[i, :].reshape(-1)
-        powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(single_data, NFFT=64, Fs=CONFIG["FS"], noverlap=32)
+        powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(single_data, NFFT=32, Fs=CONFIG["FS"], noverlap=30)
         plt.axis('off')
         plt.savefig(f'./figs/{app_name}/' + str(i) + '.png', bbox_inches='tight', pad_inches=0)
         plt.close('all')
@@ -217,6 +220,9 @@ if __name__ == '__main__':
     
     start_idx = 0
     for app_name in len_dict:
+        folder_name = f'./figs/{app_name}'
+        if(not os.path.exists(folder_name)):
+            os.makedirs(folder_name)
         app_len = len_dict[app_name]
         spectrum(min_max_data[start_idx:start_idx+app_len], app_name=app_name)
         start_idx = start_idx + app_len
