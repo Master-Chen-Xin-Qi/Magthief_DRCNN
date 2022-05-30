@@ -17,7 +17,7 @@ CONFIG= {
     "SLIDE_RATE" : 0.15,
     "WINDOW_LEN" : 500,
     "FS" : 100,  
-    "BATCH_SIZE" : 16,  # 训练DRCNN的batchsize
+    "BATCH_SIZE" : 1,  # 训练DRCNN的batchsize
     "STN_BATCH_SIZE" : 32,  # 训练STN的batchsize
     "STN_GT_BATCH_SIZE" : 1,  # 产生gt时的batchsize
     "epoch" : 100,

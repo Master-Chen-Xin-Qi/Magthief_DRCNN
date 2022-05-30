@@ -38,11 +38,11 @@ def label_process(different_name):
         with open(path, "a", encoding='utf-8') as f:
             f.truncate(0)  # delete previous content
             f.write(item + "\n")
-            print("^_^ write success")
+        print("^_^ write success")
     else:
         with open(path, "a", encoding='utf-8') as f:
             f.write(item + "\n")
-            print("^_^ write success")
+        print("^_^ write success")
     return label_dict
 
 # 整个流程汇总
@@ -192,7 +192,7 @@ def save_gt_pics(gt, app_name, pic_names):
         pic.save(f'./gt_figs/{app_name}/{pic_id}.png')
     print(f'Already generate {len(gt)} pictures for {app_name}!')
 
-
+# 删除tensorboard历史
 def delete_train_his(STN_flag, DRCNN_flag):
     if STN_flag:
         for root, _, files in os.walk('./logs/STN_train'):
@@ -210,6 +210,15 @@ def delete_train_his(STN_flag, DRCNN_flag):
             for f in files:
                 os.remove('./logs/val/' + f)
         print('All DRCNN logs have been deleted!')
+
+# 提取loader中的图片和标签
+def extract_loader(loader):
+    data_list = []
+    label_list = []
+    for idx, (data, label) in enumerate(loader):
+        data_list.append(data)
+        label_list.append(label)
+    return data_list, label_list
 
 if __name__ == '__main__':
     folder_name = './raw_mag_data'

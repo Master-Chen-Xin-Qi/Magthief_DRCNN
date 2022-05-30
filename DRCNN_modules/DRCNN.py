@@ -5,11 +5,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..")))
 import torch as t
 import numpy as np
-import array_tool as at
-from bbox_tools import loc2bbox
+import DRCNN_modules.array_tool as at
+from DRCNN_modules.bbox_tools import loc2bbox
+from DRCNN_modules.RPN import RegionProposalNetwork
+from DRCNN_modules.ROI_head import RoIHead
 from torchvision.ops import nms
-from RPN import RegionProposalNetwork
-from ROI_head import RoIHead
 # from model.utils.nms import non_maximum_suppression
 
 from torch import nn
@@ -70,11 +70,13 @@ class DRCNN(nn.Module):
             of localization estimates.
 
     """
-
+    
     def __init__(self, n_fg_class=len(CONFIG["app_name"]), ratios=[0.5, 1, 2],
                 anchor_scales=[8, 16, 32], loc_normalize_mean=(0., 0., 0., 0.),
                 loc_normalize_std=(0.1, 0.1, 0.2, 0.2)):
         super(DRCNN, self).__init__()
+        
+        self.feat_stride = 4  # downsample 16x for output of conv5 in extractor
         self.extractor = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=1, stride=2, padding=2),
             nn.BatchNorm2d(32),
@@ -209,7 +211,7 @@ class DRCNN(nn.Module):
         return bbox, label, score
 
     @nograd
-    def predict(self, imgs,sizes=None,visualize=False):
+    def predict(self, imgs, sizes=None, visualize=False):
         """Detect objects from images.
 
         This method predicts objects for each image.

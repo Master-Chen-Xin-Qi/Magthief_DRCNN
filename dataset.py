@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from config import CONFIG
 from utils import label_process
 
-
+# STN产生gt的dataset
 class MyDataset(Dataset):
     def __init__(self, pics_name, labels) -> None:
         super().__init__()
@@ -41,13 +41,32 @@ class MyDataset(Dataset):
     def __len__(self):
         return len(self.pic_names)
     
+    
+class DRCNN_Dataset(Dataset):
+    def __init__(self, pics_name, labels) -> None:
+        super().__init__() 
+        self.pics_name = pics_name
+        self.labels = labels
+    
+    def __getitem__(self, index):
+        pic_file = self.pic_names[index]
+        box, label = self.labels[index]  # box, label
+        pic = Image.open(pic_file).convert('L')  # 转为灰度图
+        pic = transforms.ToTensor()(pic)
+        pic = transforms.Resize([60, 60])(pic)  # resize到60*60
+        label = torch.tensor(label, dtype=torch.long)
+        box = torch.tensor(box, dtype=torch.long)
+        return pic, box, label
+      
 # get dataloader for DRCNN
-def get_data_loader(pic_names, labels):
-    train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, labels, test_size=0.1, shuffle=True)
-    train_pics, val_pics, train_labels, val_labels = train_test_split(train_val_pics, train_val_labels, test_size=0.2, shuffle=True)
-    train_dataset = MyDataset(train_pics, train_labels)
-    val_dataset = MyDataset(val_pics, val_labels)
-    test_dataset = MyDataset(test_pics, test_labels)
+def get_data_loader(pic_names, drcnn_labels):
+    train_val_pics, test_pics, train_val_labels, test_labels = \
+        train_test_split(pic_names, drcnn_labels, test_size=0.1, shuffle=True)
+    train_pics, val_pics, train_labels, val_labels = \
+        train_test_split(train_val_pics, train_val_labels, test_size=0.2, shuffle=True)
+    train_dataset = DRCNN_Dataset(train_pics, train_labels)
+    val_dataset = DRCNN_Dataset(val_pics, val_labels)
+    test_dataset = DRCNN_Dataset(test_pics, test_labels)
     train_loader = DataLoader(train_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True)
@@ -87,11 +106,12 @@ def get_stn_loader(pic_names, labels, pos_app):
         we train STN as a two-class classifification.
     ''' 
     pos_label = label_process(CONFIG["app_name"])[pos_app]  # 根据app名称得到正样本的label
-    
+    app_len = 0
     # 正样本label为1，没有运行app (或运行其他app)时的label为0
     for i in range(len(labels)):
         if labels[i] == pos_label:
             labels[i] = 1
+            app_len += 1
         else:
             labels[i] = 0
     train_val_pics, test_pics, train_val_labels, test_labels = train_test_split(pic_names, labels, test_size=0.1, shuffle=True)
@@ -102,7 +122,7 @@ def get_stn_loader(pic_names, labels, pos_app):
     train_loader = DataLoader(train_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
     test_loader = DataLoader(test_dataset, batch_size=CONFIG["STN_BATCH_SIZE"], shuffle=True, drop_last=True)
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, app_len
 
 def get_app_loader(pic_names, labels):
     # 正样本的label为1
@@ -121,17 +141,29 @@ def get_pic_and_labels(pics_path):
     for root, dirs, _ in os.walk(pics_path):
         for dir in dirs:
             for _, _, files in os.walk(os.path.join(root, dir)):
+                files.sort(key=lambda x: int(x[:-4]))
                 for file in files:
                     pic_names.append(os.path.join(root, dir, file))
                 labels.extend([label_dict[dir]] * len(files))
     return pic_names, labels
     
-    
-if __name__ == '__main__':
-    pics_path = './figs'
-    pic_names, labels = get_pic_and_labels(pics_path)
-    train_loader, val_loader, test_loader = get_data_loader(pic_names, labels)
-    for idx, (data, label) in enumerate(train_loader):
-        print(data.shape)
-    print(f"train_loader: {len(train_loader)} val_loader: {len(val_loader)} \
-          test_loader: {len(test_loader)}")
+def get_pic_and_labels_drcnn(pics_path):
+    pic_names = []
+    labels = []
+    label_dict = label_process(CONFIG["app_name"])
+    for root, dirs, _ in os.walk(pics_path):
+        for dir in dirs:
+            for _, _, files in os.walk(os.path.join(root, dir)):
+                for file in files:
+                    pic_names.append(os.path.join(root, dir, file))
+                labels.extend([label_dict[dir]] * len(files))
+    return pic_names, labels
+
+# if __name__ == '__main__':
+#     pics_path = './figs'
+#     pic_names, labels = get_pic_and_labels(pics_path)
+#     train_loader, val_loader, test_loader = get_data_loader(pic_names, labels)
+#     for idx, (data, label) in enumerate(train_loader):
+#         print(data.shape)
+#     print(f"train_loader: {len(train_loader)} val_loader: {len(val_loader)} \
+#           test_loader: {len(test_loader)}")

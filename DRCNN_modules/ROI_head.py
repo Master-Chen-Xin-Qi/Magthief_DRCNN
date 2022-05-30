@@ -10,9 +10,9 @@
 
 import torch
 import torch.nn as nn
-import array_tool as at
+import DRCNN_modules.array_tool as at
 from torchvision.ops import RoIPool
-from RPN import normal_init
+from DRCNN_modules.RPN import normal_init
 
 class RoIHead(nn.Module):
     """Faster R-CNN Head for VGG-16 based implementation.

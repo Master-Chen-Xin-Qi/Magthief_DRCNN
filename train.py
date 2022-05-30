@@ -48,9 +48,6 @@ class Trainer(object):
                 min_loss = val_loss
                 torch.save(self.model.state_dict(), CONFIG["save_model_path"])
                 print('Already save model!')
-        acc = self.test(test_loader)
-        print(f'Test accuracy is: {acc}%')
-        
         
     def train_epoch(self, train_loader, e):
         pbar = tqdm(enumerate(train_loader), total=len(train_loader))
@@ -63,7 +60,7 @@ class Trainer(object):
             losses = self.forward(img, bbx, label, scale)
             losses.total_loss.backward()
             self.optimizer.step()
-            total_loss += (losses.item() * CONFIG["BATCH_SIZE"])
+            total_loss += (losses.total_loss.item() * CONFIG["BATCH_SIZE"])
             dataset_size += CONFIG["BATCH_SIZE"]
             epoch_loss = total_loss / dataset_size
             pbar.set_description(f"Epoch: {e}  Iter: {idx}  Train Loss: {epoch_loss:.4f}")
@@ -76,35 +73,17 @@ class Trainer(object):
         self.model.eval()
         total_loss = 0.0
         dataset_size = 0
-        for idx, (data, label) in enumerate(val_loader):
+        for idx, (img, bbx, label, scale) in enumerate(val_loader):
             self.optimizer.zero_grad()
-            data, label = data.to(self.device), label.to(self.device)
-            predict = self.model(data)
-            loss = self.criterion(predict, label)
-            loss.backward()
+            img, bbx, label = img.to(self.device), bbx.to(self.device), label.to(self.device)
+            losses = self.forward(img, bbx, label, scale)
+            losses.total_loss.backward()
             self.optimizer.step()
-            total_loss += (loss.item() * CONFIG["BATCH_SIZE"])
+            total_loss += (losses.total_loss.item() * CONFIG["BATCH_SIZE"])
             dataset_size += CONFIG["BATCH_SIZE"]
             epoch_loss = total_loss / dataset_size
         print(f"Epoch: {e} Validate Loss: {epoch_loss:.4f}")
         return epoch_loss
-    
-    
-    def test(self, test_loader):
-        self.model.eval()
-        correct = 0
-        total = 0
-        lambda_val = 0
-        with torch.no_grad():
-            for x, y in test_loader:
-                x = x.to(self.device)
-                y = y.to(self.device)
-                class_predict, _= self.model(x, lambda_val)
-                _, predicted = torch.max(class_predict.data, 1)
-                total += y.size(0)
-                correct += (predicted == y).sum().item()
-        acc = 100 * correct / total
-        return acc
     
     def forward(self, imgs, bboxes, labels, scale):
         """Forward Faster R-CNN and calculate losses.
@@ -318,12 +297,14 @@ class STN_Trainer(object):
 
         # save gt box y1, y2 and label
         labels = []
+        pics = []
         with torch.no_grad():
             for _, (data, label) in enumerate(loader):
                 data, label = data.to(self.device), label.to(self.device)
                 pic, y1, y2 = self.model.generate_box(data)
-                labels.append(np.array((y1, y2)))
-        np.save(f'./gt/{pos_app}.npy', np.array(labels))
+                pics.append(pic)
+                labels.append([(y1, y2), label])
+        return pics, labels
      
      
 def _smooth_l1_loss(x, t, in_weight, sigma):

@@ -12,7 +12,7 @@
 import numpy as np
 import torch
 from torchvision.ops import nms
-from bbox_tools import bbox2loc, bbox_iou, loc2bbox
+from DRCNN_modules.bbox_tools import bbox2loc, bbox_iou, loc2bbox
 
 
 class ProposalTargetCreator(object):
