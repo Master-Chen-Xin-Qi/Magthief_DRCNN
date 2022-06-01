@@ -19,7 +19,7 @@ if __name__ == '__main__':
     set_seed(seed=42)
     pic_names, labels = get_pic_and_labels(CONFIG["pics_path"])
     
-    # Step1: train the STN and generate gt for every app
+    # Step 1: train the STN and generate gt for every app
     
     start = 0
     drcnn_labels = []

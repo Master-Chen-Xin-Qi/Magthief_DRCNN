@@ -225,12 +225,12 @@ def delete_train_his(app, STN_flag, DRCNN_flag):
 
 # 提取loader中的图片和标签
 def extract_loader(loader):
-    data_list = []
+    img_list = []
     label_list = []
-    for idx, (data, label) in enumerate(loader):
-        data_list.append(data)
+    for idx, (img, _, label) in enumerate(loader):
+        img_list.append(img)
         label_list.append(label)
-    return data_list, label_list
+    return img_list, label_list
 
 if __name__ == '__main__':
     folder_name = './raw_mag_data'

@@ -180,7 +180,7 @@ class DRCNN(nn.Module):
         """
         if preset == 'visualize':
             self.nms_thresh = 0.3
-            self.score_thresh = 0.7
+            self.score_thresh = 0.05
         elif preset == 'evaluate':
             self.nms_thresh = 0.3
             self.score_thresh = 0.05
@@ -257,7 +257,7 @@ class DRCNN(nn.Module):
         for img, size in zip(prepared_imgs, sizes):
             img = at.totensor(img[None]).float()
             scale = img.shape[3] / size[1]
-            roi_cls_loc, roi_scores, rois, _ = self(img, scale=scale)
+            roi_cls_loc, roi_scores, rois, _ = self(img, scale=1)
             # We are assuming that batch size is 1.
             roi_score = roi_scores.data
             roi_cls_loc = roi_cls_loc.data

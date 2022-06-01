@@ -57,7 +57,7 @@ class Trainer(object):
             val_writer.add_scalar('Val', val_loss, e)
             if val_loss < min_loss:
                 min_loss = val_loss
-                torch.save(self.model.state_dict(), CONFIG["save_model_path"])
+                torch.save(self.model.state_dict(), CONFIG["save_model_path"]+'.pt')
                 print('Already save model!')
         
     def train_epoch(self, train_loader, e):
