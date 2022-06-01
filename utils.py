@@ -38,7 +38,7 @@ def label_process(different_name):
         with open(path, "a", encoding='utf-8') as f:
             f.truncate(0)  # delete previous content
             f.write(item + "\n")
-        print("^_^ write success")
+        # print("^_^ write success")
         pass
     else:
         with open(path, "a", encoding='utf-8') as f:

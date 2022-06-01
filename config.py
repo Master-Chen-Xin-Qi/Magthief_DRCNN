@@ -10,9 +10,8 @@
 import torch
 app = ["netmusic", "qqmusic", "taobao", "wzry", "wechat", "qq", "weibo", "douyin", "bilibili",
                   "aiqiyi", "subway", "gaode", "baidu", "jingdong", "word"]
-
-app = ["aiqiyi", "baidu", "netmusic"]
 app.sort()
+
 CONFIG= {
     "app_name" : app,
     "device" : "cuda" if torch.cuda.is_available() else "cpu",
@@ -35,21 +34,5 @@ CONFIG= {
     "save_STN_path" : "./save_checkpoints/STN/best_stn_model",
     "anchor_scales" : [8, 16, 32],
     "anchor_ratios" : [0.5, 1, 2],
-    "feat_stride" : 16,
-}
-
-cfg = dict()
-cfg= {
-    "TRAIN":{
-        "RPN_PRE_NMS_TOP_N" : 12000,
-        "RPN_POST_NMS_TOP_N" : 2000,
-        "RPN_NMS_THRESH" : 0.7,
-        "RPN_MIN_SIZE" : 8,
-    },
-    "TEST":{
-        "RPN_PRE_NMS_TOP_N" : 6000,
-        "RPN_POST_NMS_TOP_N" : 300,
-        "RPN_NMS_THRESH" : 0.7,
-        "RPN_MIN_SIZE" : 16,
-    }
+    "feat_stride" : 1,
 }

@@ -34,8 +34,8 @@ class RoIHead(nn.Module):
         super(RoIHead, self).__init__()
 
         self.classifier = classifier
-        self.cls_loc = nn.Linear(4096, n_class * 4)
-        self.score = nn.Linear(4096, n_class)
+        self.cls_loc = nn.Linear(1024, n_class * 4)
+        self.score = nn.Linear(1024, n_class)
 
         normal_init(self.cls_loc, 0, 0.001)
         normal_init(self.score, 0, 0.01)

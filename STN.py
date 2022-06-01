@@ -63,7 +63,7 @@ class STN(nn.Module):
             y1 = int(torch.min(theta[i, :], dim=0)[0] * vertical)
             y2 = int(torch.max(theta[i, :], dim=0)[0] * vertical)
             if(y1 == y2):
-                y2 = y1 + 1
+                y2 = y1 + 10
             x[i, :, :, :] = resize(x[i, :, y1: y2])  # y1是在图片的上方，y2是在图片的下方 
         return x
     
@@ -86,7 +86,7 @@ class STN(nn.Module):
         y1 = min(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
         y2 = max(int(theta[0, 0] * vertical), int(theta[0, 1] * vertical))
         if y2 == y1:
-            y2 = y1 + 1
+            y2 = y1 + 10
         # x = x[:, :, y1: y2]  # y1是在图片的上方，y2是在图片的下方, (y1, y2)就确定了box的位置
         return y1, y2  
     

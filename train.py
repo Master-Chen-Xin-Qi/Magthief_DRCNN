@@ -15,6 +15,7 @@ import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from config import CONFIG
+from DRCNN_modules.creator_tool import AnchorTargetCreator, ProposalTargetCreator
 import DRCNN_modules.array_tool as at
 
 from collections import namedtuple
@@ -34,6 +35,16 @@ class Trainer(object):
         self.optimizer = optimizer(self.model.parameters(), lr=self.lr)
         self.criterion = criterion
         self.num_epochs = num_epochs
+        # target creator create gt_bbox gt_label etc as training targets. 
+        self.anchor_target_creator = AnchorTargetCreator()
+        self.proposal_target_creator = ProposalTargetCreator()
+
+        self.loc_normalize_mean = self.model.loc_normalize_mean
+        self.loc_normalize_std = self.model.loc_normalize_std
+        
+        # sigma for l1 smooth
+        self.rpn_sigma = 3
+        self.roi_sigma = 1
         
     def run(self, train_loader, val_loader, test_loader):
         train_writer = SummaryWriter(log_dir="./logs/train")
@@ -122,8 +133,8 @@ class Trainer(object):
             self.model.rpn(features, img_size, scale=1)
 
         # Since batch size is one, convert variables to singular form
-        bbox = bboxes[0]
-        label = labels[0]
+        bbox = bboxes[0].reshape(-1, 4)  # (R, 4)
+        label = labels[0].reshape(-1)  # (R, )
         rpn_score = rpn_scores[0]
         rpn_loc = rpn_locs[0]
         roi = rois
@@ -139,7 +150,7 @@ class Trainer(object):
             self.loc_normalize_std)
         # NOTE it's all zero because now it only support for batch=1 now
         sample_roi_index = torch.zeros(len(sample_roi))
-        roi_cls_loc, roi_score = self.faster_rcnn.head(
+        roi_cls_loc, roi_score = self.model.head(
             features,
             sample_roi,
             sample_roi_index)
@@ -159,9 +170,9 @@ class Trainer(object):
 
         # NOTE: default value of ignore_index is -100 ...
         rpn_cls_loss = F.cross_entropy(rpn_score, gt_rpn_label.cuda(), ignore_index=-1)
-        _gt_rpn_label = gt_rpn_label[gt_rpn_label > -1]
-        _rpn_score = at.tonumpy(rpn_score)[at.tonumpy(gt_rpn_label) > -1]
-        self.rpn_cm.add(at.totensor(_rpn_score, False), _gt_rpn_label.data.long())
+        # _gt_rpn_label = gt_rpn_label[gt_rpn_label > -1]
+        # _rpn_score = at.tonumpy(rpn_score)[at.tonumpy(gt_rpn_label) > -1]
+        # self.rpn_cm.add(at.totensor(_rpn_score, False), _gt_rpn_label.data.long())
 
         # ------------------ ROI losses (fast rcnn loss) -------------------#
         n_sample = roi_cls_loc.shape[0]
@@ -179,7 +190,7 @@ class Trainer(object):
 
         roi_cls_loss = nn.CrossEntropyLoss()(roi_score, gt_roi_label.cuda())
 
-        self.roi_cm.add(at.totensor(roi_score, False), gt_roi_label.data.long())
+        # self.roi_cm.add(at.totensor(roi_score, False), gt_roi_label.data.long())
 
         losses = [rpn_loc_loss, rpn_cls_loss, roi_loc_loss, roi_cls_loss]
         losses = losses + [sum(losses)]
@@ -295,7 +306,7 @@ class STN_Trainer(object):
             for _, (data, label) in enumerate(loader):
                 data = data.to(self.device)
                 y1, y2 = self.model.generate_box(data)
-                labels.append([(y1, y2), label.item()])
+                labels.append([(0, y1, 60, y2), label.item()])  # x_min, y_min, x_max, y_max
         return labels
      
      

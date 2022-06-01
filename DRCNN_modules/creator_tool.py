@@ -341,10 +341,10 @@ class ProposalCreator:
     def __init__(self,
                  parent_model,
                  nms_thresh=0.7,
-                 n_train_pre_nms=12000,
-                 n_train_post_nms=2000,
-                 n_test_pre_nms=6000,
-                 n_test_post_nms=300,
+                 n_train_pre_nms=2000,
+                 n_train_post_nms=1000,
+                 n_test_pre_nms=1000,
+                 n_test_post_nms=200,
                  min_size=16
                  ):
         self.parent_model = parent_model
@@ -430,7 +430,7 @@ class ProposalCreator:
         # Apply nms (e.g. threshold = 0.7).
         # Take after_nms_topN (e.g. 300).
 
-        # unNOTE: somthing is wrong here!
+        # unNOTE: something is wrong here!
         # TODO: remove cuda.to_gpu
         keep = nms(
             torch.from_numpy(roi).cuda(),

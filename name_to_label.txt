@@ -1,1 +1,1 @@
-{"aiqiyi": 0, "baidu": 1, "netmusic": 2}
+{"aiqiyi": 0, "baidu": 1, "bilibili": 2, "douyin": 3, "gaode": 4, "jingdong": 5, "netmusic": 6, "qq": 7, "qqmusic": 8, "subway": 9, "taobao": 10, "wechat": 11, "weibo": 12, "word": 13, "wzry": 14}

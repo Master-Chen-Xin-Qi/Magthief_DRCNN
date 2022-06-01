@@ -72,8 +72,8 @@ class DRCNN(nn.Module):
     """
     
     def __init__(self, n_fg_class=len(CONFIG["app_name"]), ratios=[0.5, 1, 2],
-                anchor_scales=[8, 16, 32], loc_normalize_mean=(0., 0., 0., 0.),
-                loc_normalize_std=(0.1, 0.1, 0.2, 0.2)):
+                anchor_scales=[2, 4, 8], loc_normalize_mean=(0., 0., 0., 0.),
+                loc_normalize_std=(0.1, 0.1, 0.2, 0.2)):  # we need to change the anchor_scales and ratios
         super(DRCNN, self).__init__()
         
         self.feat_stride = 4  # downsample 16x for output of conv5 in extractor
@@ -86,13 +86,13 @@ class DRCNN(nn.Module):
             nn.ReLU(),
         )
         self.classifier = nn.Sequential(
-            nn.Linear(100, 50),
+            nn.Linear(3136, 2048),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(50, n_fg_class),
+            nn.Linear(2048, 1024),
         )
         self.rpn = RegionProposalNetwork(
-            512, 512,
+            64, 64,
             ratios=ratios,
             anchor_scales=anchor_scales,
             feat_stride=self.feat_stride,

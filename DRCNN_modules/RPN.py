@@ -53,7 +53,7 @@ class RegionProposalNetwork(nn.Module):
 
     def __init__(
             self, in_channels=64, mid_channels=64, ratios=[0.5, 1, 2],
-            anchor_scales=[8, 16, 32], feat_stride=16,
+            anchor_scales=[2, 4, 8], feat_stride=1,
             proposal_creator_params=dict(),
     ):
         super(RegionProposalNetwork, self).__init__()
@@ -62,9 +62,9 @@ class RegionProposalNetwork(nn.Module):
         self.feat_stride = feat_stride
         self.proposal_layer = ProposalCreator(self, **proposal_creator_params)
         n_anchor = self.anchor_base.shape[0]
-        self.conv1 = nn.Conv2d(in_channels, mid_channels, 3, 1, 1)
-        self.score = nn.Conv2d(mid_channels, n_anchor * 2, 1, 1, 0)
-        self.loc = nn.Conv2d(mid_channels, n_anchor * 4, 1, 1, 0)
+        self.conv1 = nn.Conv2d(in_channels, mid_channels, kernel_size=3, stride=1, padding=1)
+        self.score = nn.Conv2d(mid_channels, n_anchor * 2, kernel_size=1, stride=1)
+        self.loc = nn.Conv2d(mid_channels, n_anchor * 4, kernel_size=1, stride=1)  
         normal_init(self.conv1, 0, 0.01)
         normal_init(self.score, 0, 0.01)
         normal_init(self.loc, 0, 0.01)
@@ -144,8 +144,8 @@ class RegionProposalNetwork(nn.Module):
         return rpn_locs, rpn_scores, rois, roi_indices, anchor
     
     
-def generate_anchor_base(base_size=16, ratios=[0.5, 1, 2],
-                         anchor_scales=[8, 16, 32]):
+def generate_anchor_base(base_size=4, ratios=[0.5, 1, 2],
+                         anchor_scales=[2, 4, 8]):
     """Generate anchor base windows by enumerating aspect ratio and scales.
 
     Generate anchors that are scaled and modified to the given aspect ratios.
