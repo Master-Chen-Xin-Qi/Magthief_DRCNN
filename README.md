@@ -18,7 +18,6 @@
 |-- drcnn_labels.npy  
 |-- evaluation 
 |-- figs  #保存spectrum
-|-- gt_figs  # 保存得到的ground truth
 |-- logs  # tensorboard可视化保存路径
 |   |-- STN_train
 |   |-- STN_val
