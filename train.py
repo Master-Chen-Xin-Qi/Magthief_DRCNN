@@ -78,20 +78,18 @@ class Trainer(object):
             pbar.update(1)
         return epoch_loss
     
-    
     def val_epoch(self, val_loader, e):
         self.model.eval()
         total_loss = 0.0
         dataset_size = 0
-        for idx, (img, bbx, label, scale) in enumerate(val_loader):
-            self.optimizer.zero_grad()
-            img, bbx, label = img.to(self.device), bbx.to(self.device), label.to(self.device)
-            losses = self.forward(img, bbx, label, scale)
-            losses.total_loss.backward()
-            self.optimizer.step()
-            total_loss += (losses.total_loss.item() * CONFIG["BATCH_SIZE"])
-            dataset_size += CONFIG["BATCH_SIZE"]
-            epoch_loss = total_loss / dataset_size
+        with torch.no_grad():
+            for idx, (img, bbx, label) in enumerate(val_loader):
+                self.optimizer.zero_grad()
+                img, bbx, label = img.to(self.device), bbx.to(self.device), label.to(self.device)
+                losses = self.forward(img, bbx, label)
+                total_loss += (losses.total_loss.item() * CONFIG["BATCH_SIZE"])
+                dataset_size += CONFIG["BATCH_SIZE"]
+                epoch_loss = total_loss / dataset_size
         print(f"Epoch: {e} Validate Loss: {epoch_loss:.4f}")
         return epoch_loss
     

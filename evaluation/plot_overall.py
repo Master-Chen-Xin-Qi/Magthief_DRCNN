@@ -23,14 +23,13 @@ if __name__ == '__main__':
     plt.show()
     
     
-    
-    app = ["Hornor of Kings," "PUBG", "Netease Cloud Music", "QQ Music", "Bilibili", "Aiqiyi", 
-           "Tiktok", "Taobao", "Jingdong", "Word", "Baidu map", "Gaode map", "WeChat", "QQ"]
+    app = ["Bilibili", "Aiqiyi", "Tiktok", "WeChat", "QQ", "Weibo"]
+    app.sort()
     x = np.arange(len(app))
-    f1_app = []
+    f1_app = [0.913, 0.891, 0.874, 0.862, 0.894, 0.902]
     plt.ylim(0, 1)
     for i in range(len(app)):
-        plt.bar(x[i], f1_app[i], width=0.5)
+        plt.bar(x[i], f1_app[i], width=0.5, color='r', alpha=0.5)
     plt.xticks(x, app)
     plt.ylabel("Macro F1 score")
     plt.show()
