@@ -22,7 +22,7 @@ CONFIG= {
     "STN_BATCH_SIZE" : 16,  # 训练STN的batchsize
     "STN_GT_BATCH_SIZE" : 1,  # 产生gt时的batchsize
     "epoch" : 100,
-    "STN_epoch" : 1,
+    "STN_epoch" : 5,
     "optimizer" : torch.optim.Adam,
     "STN_optimizer" : torch.optim.Adam,
     "lr" : 1e-4, 

@@ -25,7 +25,8 @@
 |   |-- train
 |   `-- val
 |-- mag_np  # 保存npy格式的数据
-|-- main.py  # 主程序
+|-- main.py  # DRCNN主程序
+|-- STN_main.py  # STN主程序
 |-- name_to_label.txt  # 名字和标签转换
 |-- raw_mag_data  # 源数据
 |-- requirements.txt  # 依赖库
@@ -50,13 +51,13 @@
    python utils.py
    ```
 
-3. 训练STN，详见main.py中的Step 1，会在`gt_fig`下生成ground truth区域图片
+3. 训练STN，详见`STN_main.py`中的Step 1，会在`gt_fig`下生成ground truth区域图片 
 
    ```bash
-   python main.py
+   python STN_main.py
    ```
 
-4. 训练DRCNN，详见main.py中的Step 2
+4. 训练DRCNN，详见`main.py`中的Step 2
 
    ```bash
    python main.py
